@@ -1,0 +1,80 @@
+﻿@page "/weather"
+@using System.Text.Json
+@attribute [StreamRendering]
+
+<PageTitle>Homework Forecast</PageTitle>
+
+@if (AvonLakeWeatherForecast == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <h1>Homework forecast for @AvonLakeWeatherForecast.RelativeLocation.Properties.City, @AvonLakeWeatherForecast.RelativeLocation.Properties.State </h1>
+
+    <p>Forecast:</p>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Forecast</th>
+                <th>Summary</th>
+                <th>Temp. (F)</th>
+                <th>Doing my Homework?</th>
+            </tr>
+        </thead>
+        @foreach (var item in AvonLakeWeatherForecastDetail.Periods)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>
+                    <img src="@item.Icon" />
+                </td>
+                <td>@item.ShortForecast</td>
+                <td>@item.Temperature</td>
+                <td>
+                    @if (item.ShortForecast == "Sunny")
+                    {
+                        <div>100%</div>
+                    }
+                    else if (item.ShortForecast == "Partly Sunny")
+                    {
+                        <div>75%</div>
+                    }
+                    else
+                    {
+                        <div>0%</div>
+                    }
+                </td>
+            </tr>
+        }
+    </table>
+}
+
+@code {
+    private WeatherForecast? AvonLakeWeatherForecast;
+
+    private ForecastDetail? AvonLakeWeatherForecastDetail;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var httpClient = new HttpClient();
+
+        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("KeithsAppIdea/1.0");
+
+        var response = await httpClient.GetStringAsync("https://api.weather.gov/points/41.5083,-82.0192");
+
+        var root = JsonSerializer.Deserialize<RootWeatherForecast>(response, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        AvonLakeWeatherForecast = root.Properties;
+
+        var forecastResponse = await httpClient.GetStringAsync(AvonLakeWeatherForecast.Forecast);
+
+        //Console.WriteLine(forecast);
+
+        var detailRoot = JsonSerializer.Deserialize<RootWeatherForecastDetail>(forecastResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        AvonLakeWeatherForecastDetail = detailRoot.Properties;
+    }
+}
